@@ -9,5 +9,13 @@ def load_data():
     return pd.concat([id1, id2, id3])
 
 
+def preprocess_data(df):
+    # Удаление дубликатов
+    df = df.drop_duplicates()
+    # Заполнение пропусков
+    df['DishDiscountSumInt'] = df['DishDiscountSumInt'].fillna(0)
+    return df
+
+
 if __name__ == "__main__":
     print("Программа запущена")
