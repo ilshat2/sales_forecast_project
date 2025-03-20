@@ -7,16 +7,17 @@ import lightgbm as lgb
 
 def load_data():
     """Загрузка и объединение данных из файлов"""
-    df1 = pd.read_csv(
-        '../data/raw/id_597.xlsx',
+    print("[1/6] Загрузка данных...")
+    df1 = pd.read_excel(
+        r'C:\Dev\sales_forecast_project\data\raw\id_16.xlsx',
         parse_dates=['OpenDate.Typed', 'CloseTime'],
     )
-    df2 = pd.read_csv(
-        '../data/raw/id_16.xlsx',
+    df2 = pd.read_excel(
+        r'C:\Dev\sales_forecast_project\data\raw\id_34.xlsx',
         parse_dates=['OpenDate.Typed', 'CloseTime'],
     )
-    df3 = pd.read_csv(
-        '../data/raw/id_34.xlsx',
+    df3 = pd.read_excel(
+        r'C:\Dev\sales_forecast_project\data\raw\id_597.xlsx',
         parse_dates=['OpenDate.Typed', 'CloseTime'],
     )
     return pd.concat([df1, df2, df3], ignore_index=True)
@@ -24,7 +25,7 @@ def load_data():
 
 def preprocess_data(df):
     """Предобработка данных"""
-
+    print("[2/6] Предобработка данных...")
     # Удаление дубликатов
     df = df.drop_duplicates()
 
@@ -40,7 +41,7 @@ def preprocess_data(df):
 
 def add_features(df):
     """Генерация новых признаков"""
-
+    print("[3/6] Генерация признаков...")
     # Временные признаки
     df['DayOfWeek'] = df['OpenDate.Typed'].dt.dayofweek
     df['Month'] = df['OpenDate.Typed'].dt.month
@@ -63,6 +64,7 @@ def add_features(df):
 
 def prepare_training_data(df):
     """Подготовка данных для обучения модели"""
+    print("[4/6] Подготовка данных для обучения...")
 
     features = [
         'DishEncoded',
@@ -84,7 +86,7 @@ def prepare_training_data(df):
 
 def train_model(X, y):
     """Обучение модели LightGBM"""
-
+    print("[5/6] Обучение модели...")
     # Разделение данных
     X_train, X_test, y_train, y_test = train_test_split(
         X, y,
@@ -113,6 +115,7 @@ def train_model(X, y):
 
 def predict_tomorrow(model, df, le_dish, le_rest):
     """Прогнозирование продаж на завтра"""
+    print("[6/6] Генерация прогноза...")
 
     # Определение завтрашней даты
     last_date = df['OpenDate.Typed'].max()
@@ -155,4 +158,19 @@ def predict_tomorrow(model, df, le_dish, le_rest):
 
 
 if __name__ == "__main__":
-    print("Программа запущена")
+    # Основной пайплайн
+    df = load_data()
+    df = preprocess_data(df)
+    df, le_dish, le_rest = add_features(df)
+    X, y = prepare_training_data(df)
+    model = train_model(X, y)
+    forecast = predict_tomorrow(model, df, le_dish, le_rest)
+
+    # Сохранение результатов
+    forecast.to_excel(
+        r'C:\Dev\sales_forecast_project\data\processed\forecast.xlsx',
+        index=False
+    )
+    print("\nПрогноз успешно сохранен в data/processed/forecast.xlsx")
+    print("Топ-5 прогнозируемых позиций:")
+    print(forecast.sort_values('PredictedAmount', ascending=False).head(5))
