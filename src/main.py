@@ -3,12 +3,21 @@ from sklearn.model_selection import train_test_split
 import lightgbm as lgb
 
 
-# Загрузка данных
 def load_data():
-    id1 = pd.read_csv('../data/raw/id_597.csv')
-    id2 = pd.read_csv('../data/raw/id_16.csv')
-    id3 = pd.read_csv('../data/raw/id_34.csv')
-    return pd.concat([id1, id2, id3])
+    """Загрузка и объединение данных из CSV-файлов"""
+    df1 = pd.read_csv(
+        '../data/raw/id_597.csv',
+        parse_dates=['OpenDate.Typed', 'CloseTime'],
+    )
+    df2 = pd.read_csv(
+        '../data/raw/id_16.csv',
+        parse_dates=['OpenDate.Typed', 'CloseTime'],
+    )
+    df3 = pd.read_csv(
+        '../data/raw/id_34.csv',
+        parse_dates=['OpenDate.Typed', 'CloseTime'],
+    )
+    return pd.concat([df1, df2, df3], ignore_index=True)
 
 
 def preprocess_data(df):
