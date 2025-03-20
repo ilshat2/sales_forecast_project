@@ -1,4 +1,6 @@
 import pandas as pd
+from sklearn.model_selection import train_test_split
+import lightgbm as lgb
 
 
 # Загрузка данных
@@ -15,6 +17,21 @@ def preprocess_data(df):
     # Заполнение пропусков
     df['DishDiscountSumInt'] = df['DishDiscountSumInt'].fillna(0)
     return df
+
+
+def add_features(df):
+    # Временные признаки
+    df['DayOfWeek'] = df['OpenDate.Typed'].dt.dayofweek
+    df['IsWeekend'] = df['DayOfWeek'].isin([5,6]).astype(int)
+    return df
+
+
+def train_model(X, y):
+    # Модель
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    model = lgb.LGBMRegressor()
+    model.fit(X_train, y_train)
+    return model
 
 
 if __name__ == "__main__":
