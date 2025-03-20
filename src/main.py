@@ -60,11 +60,53 @@ def add_features(df):
     return df, le_dish, le_rest
 
 
+def prepare_training_data(df):
+    """Подготовка данных для обучения модели"""
+
+    features = [
+        'DishEncoded',
+        'RestEncoded',
+        'DayOfWeek',
+        'Month',
+        'CloseHour',
+        'IsWeekend',
+        'Lag3',
+        'DishDiscountSumInt',
+    ]
+    target = 'DishAmountInt'
+
+    # Удаление строк с пропусками
+    df_clean = df.dropna(subset=features + [target])
+
+    return df_clean[features], df_clean[target]
+
+
 def train_model(X, y):
-    # Модель
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
-    model = lgb.LGBMRegressor()
+    """Обучение модели LightGBM"""
+
+    # Разделение данных
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y,
+        test_size=0.2,
+        random_state=42
+    )
+
+    # Создание и обучение модели
+    model = lgb.LGBMRegressor(
+        num_leaves=31,
+        learning_rate=0.05,
+        n_estimators=100
+    )
     model.fit(X_train, y_train)
+
+    # Оценка модели
+    train_score = model.score(X_train, y_train)
+    test_score = model.score(X_test, y_test)
+
+    print("Качество модели:")
+    print(f"Обучающая выборка: {train_score:.2f}")
+    print(f"Тестовая выборка: {test_score:.2f}")
+
     return model
 
 
