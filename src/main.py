@@ -4,27 +4,35 @@ import lightgbm as lgb
 
 
 def load_data():
-    """Загрузка и объединение данных из CSV-файлов"""
+    """Загрузка и объединение данных из файлов"""
     df1 = pd.read_csv(
-        '../data/raw/id_597.csv',
+        '../data/raw/id_597.xlsx',
         parse_dates=['OpenDate.Typed', 'CloseTime'],
     )
     df2 = pd.read_csv(
-        '../data/raw/id_16.csv',
+        '../data/raw/id_16.xlsx',
         parse_dates=['OpenDate.Typed', 'CloseTime'],
     )
     df3 = pd.read_csv(
-        '../data/raw/id_34.csv',
+        '../data/raw/id_34.xlsx',
         parse_dates=['OpenDate.Typed', 'CloseTime'],
     )
     return pd.concat([df1, df2, df3], ignore_index=True)
 
 
 def preprocess_data(df):
+    """Предобработка данных"""
+
     # Удаление дубликатов
     df = df.drop_duplicates()
+
     # Заполнение пропусков
     df['DishDiscountSumInt'] = df['DishDiscountSumInt'].fillna(0)
+
+    # Извлечение времени закрытия чека
+    df['CloseHour'] = df['CloseTime'].dt.hour
+    df['CloseMinute'] = df['CloseTime'].dt.minute
+
     return df
 
 
