@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 import lightgbm as lgb
 
@@ -37,10 +38,26 @@ def preprocess_data(df):
 
 
 def add_features(df):
+    """Генерация новых признаков"""
+
     # Временные признаки
     df['DayOfWeek'] = df['OpenDate.Typed'].dt.dayofweek
-    df['IsWeekend'] = df['DayOfWeek'].isin([5,6]).astype(int)
-    return df
+    df['Month'] = df['OpenDate.Typed'].dt.month
+    df['IsWeekend'] = df['DayOfWeek'].isin([5, 6]).astype(int)
+
+    # Сортировка для лаговых признаков
+    df = df.sort_values(['DishName', 'RestorauntGroup', 'OpenDate.Typed'])
+
+    # Лаги продаж за 3 дня
+    df['Lag3'] = df.groupby(['DishName', 'RestorauntGroup'])['DishAmountInt'].shift(3)
+
+    # Кодирование категорий
+    le_dish = LabelEncoder()
+    le_rest = LabelEncoder()
+    df['DishEncoded'] = le_dish.fit_transform(df['DishName'])
+    df['RestEncoded'] = le_rest.fit_transform(df['RestorauntGroup'])
+
+    return df, le_dish, le_rest
 
 
 def train_model(X, y):
