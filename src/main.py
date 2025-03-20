@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 import lightgbm as lgb
@@ -110,9 +111,47 @@ def train_model(X, y):
     return model
 
 
-def make_predictions(model, tomorrow_date):
-    # Логика прогнозирования
-    pass
+def predict_tomorrow(model, df, le_dish, le_rest):
+    """Прогнозирование продаж на завтра"""
+
+    # Определение завтрашней даты
+    last_date = df['OpenDate.Typed'].max()
+    tomorrow = last_date + pd.DateOffset(days=1)
+
+    # Создание шаблона прогноза
+    forecast_data = []
+    for dish in df['DishName'].unique():
+        for rest in df['RestorauntGroup'].unique():
+            # Исторические данные для лагов
+            history = df[
+                (df['DishName'] == dish) & 
+                (df['RestorauntGroup'] == rest)
+            ]
+            lag3_value = history.tail(3)['DishAmountInt'].mean()
+
+            forecast_data.append({
+                'DishEncoded': le_dish.transform([dish])[0],
+                'RestEncoded': le_rest.transform([rest])[0],
+                'DayOfWeek': tomorrow.dayofweek,
+                'Month': tomorrow.month,
+                'CloseHour': 18,  # Предполагаем пиковое время
+                'IsWeekend': 1 if tomorrow.dayofweek in [5, 6] else 0,
+                'Lag3': lag3_value if not np.isnan(lag3_value) else 0,
+                'DishDiscountSumInt': 0  # Без скидок по умолчанию
+            })
+
+    # Прогнозирование
+    forecast_df = pd.DataFrame(forecast_data)
+    predictions = model.predict(forecast_df)
+
+    # Форматирование результатов
+    result = pd.DataFrame({
+        'DishName': le_dish.inverse_transform(forecast_df['DishEncoded']),
+        'RestorauntGroup': le_rest.inverse_transform(forecast_df['RestEncoded']),
+        'PredictedAmount': np.round(predictions).astype(int)
+    })
+
+    return result[result['PredictedAmount'] > 0]
 
 
 if __name__ == "__main__":
